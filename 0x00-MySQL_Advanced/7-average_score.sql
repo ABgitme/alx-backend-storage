@@ -2,21 +2,20 @@
 --for a specific student based on the corrections table
 DELIMITER $$
 
-CREATE PROCEDURE ComputeAverageScoreForUser(
-    IN p_user_id INT
-)
+DROP PROCEDURE IF EXISTS ComputeAverageScoreForUser;
+CREATE PROCEDURE ComputeAverageScoreForUser (IN user_id INT)
 BEGIN
-    DECLARE avg_score DECIMAL(5, 2);
+    DECLARE avg_score DECIMAL(5,2);
 
-    -- Compute the average score for the specified user from the corrections table
-    SELECT AVG(score) INTO avg_score
+    -- Calculate the average score for the user, set to 0 if no scores are found
+    SELECT IFNULL(AVG(score), 0) INTO avg_score
     FROM corrections
-    WHERE user_id = p_user_id;
+    WHERE corrections.user_id = user_id;
 
-    -- Update the user's average_score in the users table
+    -- Update the user's average_score
     UPDATE users
-    SET average_score = IFNULL(avg_score, 0)
-    WHERE id = p_user_id;
-END$$
+    SET average_score = avg_score
+    WHERE id = user_id;
+END $$
 
 DELIMITER ;
