@@ -1,0 +1,2 @@
+//MongoDB to switch to the database named my_db. If it doesn't exist, MongoDB will create it automatically
+use my_db
