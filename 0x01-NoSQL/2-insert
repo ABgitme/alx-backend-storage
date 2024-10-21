@@ -1,3 +1,4 @@
-//To insert a document into the school collection with the attribute name set to "Holberton school"
+//To insert a document into the school
+//collection with the attribute name set to "Holberton school"
 use my_db
 db.school.insertOne({ name: "Holberton school" })
