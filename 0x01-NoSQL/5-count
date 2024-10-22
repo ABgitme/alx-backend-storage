@@ -1,2 +1,2 @@
 //count documents in the database
-db.school.countDocuments();
+db.school.count();
