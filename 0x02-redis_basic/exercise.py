@@ -142,3 +142,24 @@ class Cache:
             or None if the key doesn't exist.
         """
         return self.get(key, lambda d: int(d))
+
+def replay(method: Callable) -> None:
+    """
+    Display the history of calls for a specific method decorated by call_history.
+    This shows the number of calls, inputs, and outputs for each call.
+    """
+    # Get the Redis keys for inputs and outputs
+    key = method.__qualname__
+    inputs_key = f"{key}:inputs"
+    outputs_key = f"{key}:outputs"
+
+    # Fetch the lists of inputs and outputs from Redis
+    inputs = method.__self__._redis.lrange(inputs_key, 0, -1)
+    outputs = method.__self__._redis.lrange(outputs_key, 0, -1)
+
+    # Display the number of calls
+    print(f"{key} was called {len(inputs)} times:")
+
+    # Loop through inputs and outputs using zip and print the formatted history
+    for input_data, output_data in zip(inputs, outputs):
+        print(f"{key}(*{input_data.decode('utf-8')}) -> {output_data.decode('utf-8')}")
