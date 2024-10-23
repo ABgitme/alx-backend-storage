@@ -3,6 +3,53 @@ import redis
 import uuid
 from typing import Union
 from typing import Union, Callable, Optional
+from functools import wraps
+
+
+def call_history(method: Callable) -> Callable:
+    """
+    Decorator that records the history of inputs and outputs of a function
+    in Redis. The inputs and outputs are stored in separate lists.
+    """
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        # Get the qualified name of the method
+        key = method.__qualname__
+
+        # Convert the input arguments to
+        # string and store them in ":inputs" list
+        self._redis.rpush(f"{key}:inputs", str(args))
+
+        # Call the original method and get the result
+        result = method(self, *args, **kwargs)
+
+        # Store the result in the ":outputs" list
+        self._redis.rpush(f"{key}:outputs", str(result))
+
+        # Return the original result
+        return result
+
+    return wrapper
+
+
+def count_calls(method: Callable) -> Callable:
+    """
+    Decorator that counts the number of times a method is called
+    by incrementing the count in Redis using the method's qualified name.
+    """
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        """
+        Wrapper function that increments the call count in Redis
+        and returns the result of the original method.
+        """
+        # Get the qualified name of the method as the Redis key
+        key = method.__qualname__
+        # Increment the call count for the method
+        self._redis.incr(key)
+        # Call the original method and return its result
+        return method(self, *args, **kwargs)
+    return wrapper
 
 
 class Cache:
@@ -20,6 +67,8 @@ class Cache:
         self._redis = redis.Redis()
         self._redis.flushdb()
 
+    @call_history
+    @count_calls
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """
         Store the data in Redis with a randomly generated key.
@@ -92,4 +141,4 @@ class Cache:
             Optional[int]: The retrieved integer,
             or None if the key doesn't exist.
         """
-        return self.get(key, fn=int)
+        return self.get(key, lambda d: int(d))
